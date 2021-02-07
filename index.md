@@ -7,3 +7,7 @@ This is very much a work in progress.
 ### Building
 
 Eventually, we will upload our design files so you can build a copy of the board yourself.  This project is very new, we'll get to it soon enough.
+
+### Connecting
+
+Once your board connects, it should take you to a page to connect [WiFi](wifi)
