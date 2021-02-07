@@ -18,8 +18,8 @@ methods of allowing credentials at some point, but for now, this will do.
 
 ## 1.  Download.
 
-For Android:  https://play.google.com/store/apps/details?id=com.khoazero123.iot_esptouch_demo&hl=en_US&gl=US
-For iOS:  https://apps.apple.com/us/app/espressif-esptouch/id1071176700
+- [Android](https://play.google.com/store/apps/details?id=com.khoazero123.iot_esptouch_demo&hl=en_US&gl=US)
+- [IOS](https://apps.apple.com/us/app/espressif-esptouch/id1071176700)
 
 ## 2.  Enter in password
 
