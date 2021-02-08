@@ -66,10 +66,49 @@ bool ChessDisplay::begin() {
     return false;
 
   // Initialize the display
-  if(!this->display.begin(SSD1306_SWITCHCAPVCC, address))
+  if (!this->display.begin(SSD1306_SWITCHCAPVCC, address))
     return false;
 
   // Display initialized successfully
   this->display.display();
   return true;;
+}
+
+void ChessDisplay::update(String url, String message) {
+  uint8_t qrcodeData[qrcode_getBufferSize(3)];
+
+  display.clearDisplay();  // Clear display buffer
+  messageCanvas.fillScreen(SSD1306_BLACK);
+
+  if (url == "") {
+    // Draw logo bitmap for left hand side
+    display.drawBitmap(0, 0, LOGO, 64, 64, SSD1306_WHITE);
+  } else {
+    // Generate a QR code and write to left hand side of display.
+    // Blow it up to 2x the size.
+    qrcode_initText(&qrcode, qrcodeData, 3, 0, url.c_str());
+    for (uint8_t x = 0; x < qrcode.size; x++)
+      for (uint8_t y = 0; y < qrcode.size; y++)
+        if (qrcode_getModule(&qrcode, x, y))
+          for (int i1 = 0; i1 < 2; i1++)
+            for (int i2 = 0; i2 < 2; i2++)
+              display.drawPixel(x * 2 + i1, y * 2 + i2, SSD1306_WHITE);
+  }
+
+  messageCanvas.setTextSize(1);
+  messageCanvas.setTextColor(SSD1306_WHITE);
+  messageCanvas.setCursor(0, 0);
+  messageCanvas.cp437(true);
+  messageCanvas.write(message.c_str());
+
+  // Update the canvas to the right of the display.
+  for (int x = 0; x < 64; x++) {
+    for (int y = 0; y < 64; y++) {
+      if (messageCanvas.getPixel(x, y)) {
+        display.drawPixel(x + 64, y, SSD1306_WHITE);
+      }
+    }
+  }
+
+  this->display.display();
 }

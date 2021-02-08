@@ -25,13 +25,49 @@ void Table::begin(const bool& runTest, const uint8_t simpleInputPins[][SIMPLE_GR
         this->board[y][x].pinNumber = simpleInputPins[y][x];
         this->board[y][x].ledNumber = simpleLedLocations[y][x];
       }
-
   }
 }
 
 void Table::update() {
   this->updatePieceLocations();
   this->updateLed();
+}
+
+void Table::updatePieceLocations() {
+  int upperBound = this->simpleMode ? SIMPLE_GRID_SIZE : GRID_SIZE;
+
+  for (int x = 0; x < upperBound; x++) {
+    for (int y = 0; y < upperBound; y++) {
+      // TODO:  Handle non-simple mode I2C inputs.
+      this->board[y][x].filled = !digitalRead(board[y][x].pinNumber);
+    }
+  }
+}
+
+void Table::mirrorBoard() {
+  int upperBound = this->simpleMode ? SIMPLE_GRID_SIZE : GRID_SIZE;
+  for (int x = 0; x < upperBound; x++)
+    for (int y = 0; y < upperBound; y++)
+      this->pixels.setPixelColor(this->board[y][x].ledNumber, 0, this->board[y][x].filled ? 255 : 0, 0);
+  this->pixels.show();
+}
+
+void Table::updateLed() {
+  if (this->mirrorLocations) {
+    this->mirrorBoard();
+    return;
+  }
+}
+
+void Table::error() {
+  while (1) {
+    this->pixels.setPixelColor(0, 255, 0, 0);
+    this->pixels.show();
+    delay(500);
+    this->pixels.setPixelColor(0, 0, 0, 0);
+    this->pixels.show();
+    delay(500);
+  }
 }
 
 // Perform a quick test to cycle through each LED color.
@@ -49,36 +85,5 @@ void led_test(Adafruit_NeoPixel& p, const int& ledCount) {
       p.setPixelColor(i, testColors[c]);
     p.show();
     delay(750);
-  }
-}
-
-void Table::updatePieceLocations() {
-  int upperBound = this->simpleMode ? SIMPLE_GRID_SIZE : GRID_SIZE;
-
-  for (int x = 0; x < upperBound; x++) {
-    for (int y = 0; y < upperBound; y++) {
-      // TODO:  Handle non-simple mode I2C inputs.
-      this->board[y][x].filled = !digitalRead(board[y][x].pinNumber);
-    }
-  }
-}
-
-void Table::updateLed() {
-  int upperBound = this->simpleMode ? SIMPLE_GRID_SIZE : GRID_SIZE;
-
-  for (int x = 0; x < upperBound; x++)
-    for (int y = 0; y < upperBound; y++)
-      this->pixels.setPixelColor(this->board[y][x].ledNumber, 0, this->board[y][x].filled ? 255 : 0, 0);
-  this->pixels.show();
-}
-
-void Table::error() {
-  while (1) {
-    this->pixels.setPixelColor(0, 255, 0, 0);
-    this->pixels.show();
-    delay(500);
-    this->pixels.setPixelColor(0, 0, 0, 0);
-    this->pixels.show();
-    delay(500);
   }
 }

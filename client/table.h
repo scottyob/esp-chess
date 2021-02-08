@@ -36,10 +36,14 @@ class Table {
     Adafruit_NeoPixel pixels;
     void updatePieceLocations();
     void updateLed();
+    void mirrorBoard();
 
   public:
+    bool mirrorLocations;  // Should we mirror the locations of pieces on the board?  Good for testing/setup.
+
     Table(int led_pin, const bool simpleMode = false) : pixels(simpleMode ? SIMPLE_GRID_LEDS : GRID_LEDS, led_pin, NEO_GRB + NEO_KHZ800) {
       this->simpleMode = simpleMode;
+      this->mirrorLocations = true;
     }
     // Initializes LED display, runs through tests
     void begin(const bool& runTest, const uint8_t simpleInputPins[][SIMPLE_GRID_SIZE]);
