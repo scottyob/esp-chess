@@ -3,6 +3,7 @@
 
 #include "stdint.h"
 #include <Adafruit_NeoPixel.h>
+#include <ArduinoJson.h>
 
 #define GRID_SIZE          8   // How hide/high is the table grid
 #define SIMPLE_GRID_SIZE   2
@@ -10,6 +11,7 @@
 #define SIMPLE_GRID_LEDS   SIMPLE_GRID_SIZE * SIMPLE_GRID_SIZE
 #define FILLED             true
 #define EMPTY              false
+#define JSONBOARD_T        StaticJsonDocument<2048>
 
 /**
    Single square on grid.
@@ -40,14 +42,17 @@ class Table {
 
   public:
     bool mirrorLocations;  // Should we mirror the locations of pieces on the board?  Good for testing/setup.
+    bool requiresUpdate;
 
     Table(int led_pin, const bool simpleMode = false) : pixels(simpleMode ? SIMPLE_GRID_LEDS : GRID_LEDS, led_pin, NEO_GRB + NEO_KHZ800) {
       this->simpleMode = simpleMode;
       this->mirrorLocations = true;
+      requiresUpdate = false;
     }
     // Initializes LED display, runs through tests
     void begin(const bool& runTest, const uint8_t simpleInputPins[][SIMPLE_GRID_SIZE]);
     void begin(const bool& runTest);
+    void getJsonState(char* buffer, size_t bufferSize);
     // puts LED in an error state
     void error();
     // Update the table state

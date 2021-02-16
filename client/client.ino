@@ -16,9 +16,11 @@
      Adafruit_NeoPixel
      Qrcode
      EspFlash
+     MQTT Library https://github.com/256dpi/arduino-mqtt
+     ArduinoJson (benoit Blanchon)
 */
 
-
+#define VERSION   0.1
 #define LED_PIN   15  // Pin number LED strip is on.
 
 // If this is in "simple mode", we need to give the pins we expect inputs on.
@@ -28,8 +30,8 @@ const uint8_t simpleInputPins[][2] = {
   {19, 18},
 };
 
-Network network;
 Table table(LED_PIN, true);
+Network network(&table);
 ChessDisplay display;
 
 void setup() {

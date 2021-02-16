@@ -39,7 +39,10 @@ void Table::updatePieceLocations() {
   for (int x = 0; x < upperBound; x++) {
     for (int y = 0; y < upperBound; y++) {
       // TODO:  Handle non-simple mode I2C inputs.
-      this->board[y][x].filled = !digitalRead(board[y][x].pinNumber);
+      auto old = board[y][x].filled;
+      board[y][x].filled = !digitalRead(board[y][x].pinNumber);
+      if (board[y][x].filled != old)
+        requiresUpdate = true;
     }
   }
 }
@@ -86,4 +89,19 @@ void led_test(Adafruit_NeoPixel& p, const int& ledCount) {
     p.show();
     delay(750);
   }
+}
+
+// Gets a JSON state into buffer;
+void Table::getJsonState(char* buffer, size_t bufferSize) {
+  strcpy(buffer, "\"This is a demo of some string\"");
+  static JSONBOARD_T doc;
+  doc.clear();
+  JsonArray rows = doc.to<JsonArray>();
+  for (int y = 0; y < GRID_SIZE; y++) {
+    JsonArray columns = rows.createNestedArray();
+    for (int x = 0; x < GRID_SIZE; x++) {
+      columns.add((int)board[y][x].filled);
+    }
+  }
+  serializeJson(doc, buffer, bufferSize);
 }
