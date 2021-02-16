@@ -75,7 +75,7 @@ class Network {
     Network(Table* tableRef) : server(80), table(tableRef), client(MESSAGE_LENGTH) {}
     void begin();
     void update();
-    String getUrl();        // URL to setup the certs
+    String getIp();        // URL to setup the certs
     WifiState getState() {
       return state;
     }

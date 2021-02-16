@@ -21,6 +21,7 @@
 */
 
 #define VERSION   0.1
+#define PROD_DOMAIN "prod.d3rwxyk20q1igr.amplifyapp.com"
 #define LED_PIN   15  // Pin number LED strip is on.
 
 // If this is in "simple mode", we need to give the pins we expect inputs on.
@@ -60,6 +61,7 @@ void setup() {
 void loop() {
   static auto wifiState = WifiState::kIdle;
   auto newWifiState = network.getState();
+  String url;
   if (newWifiState != wifiState) {
     // WiFi status has changed.  We need to update the display
     wifiState = newWifiState;
@@ -72,7 +74,16 @@ void loop() {
         display.update("https://scottyob.github.io/esp-chess/wifi", "WiFi Setup\nRequired");
         break;
       case WifiState::kCertsRequired:
-        display.update(network.getUrl(), "Acct Setup");
+        // Build a URL
+        url = String("https://");
+        url += PROD_DOMAIN;
+        url += "/setup/";
+        url += network.getIp();
+        Serial.print("Asking user to setup account: ");
+        Serial.println(url);
+
+        // display URL for setting up account
+        display.update(url, "Acct Setup");
         break;
       default:
         display.update("", "Connected!");

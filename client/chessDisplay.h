@@ -10,6 +10,9 @@
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
+// level of detail https://github.com/ricmoo/qrcode/
+// If set to 3, will render bigger
+#define QR_ECC ECC_LOW
 
 // 'pixil-frame-0', 64x64px
 const unsigned char LOGO [] PROGMEM = {

@@ -75,7 +75,12 @@ bool ChessDisplay::begin() {
 }
 
 void ChessDisplay::update(String url, String message) {
-  uint8_t qrcodeData[qrcode_getBufferSize(3)];
+  auto qr_version = 11;
+  if(url.length() < 53) {
+    qr_version = 3;
+  }
+  
+  uint8_t qrcodeData[qrcode_getBufferSize(qr_version)];
 
   display.clearDisplay();  // Clear display buffer
   messageCanvas.fillScreen(SSD1306_BLACK);
@@ -86,13 +91,20 @@ void ChessDisplay::update(String url, String message) {
   } else {
     // Generate a QR code and write to left hand side of display.
     // Blow it up to 2x the size.
-    qrcode_initText(&qrcode, qrcodeData, 3, 0, url.c_str());
+    qrcode_initText(&qrcode, qrcodeData, qr_version, QR_ECC, url.c_str());
     for (uint8_t x = 0; x < qrcode.size; x++)
       for (uint8_t y = 0; y < qrcode.size; y++)
-        if (qrcode_getModule(&qrcode, x, y))
-          for (int i1 = 0; i1 < 2; i1++)
-            for (int i2 = 0; i2 < 2; i2++)
-              display.drawPixel(x * 2 + i1, y * 2 + i2, SSD1306_WHITE);
+        if (qrcode_getModule(&qrcode, x, y)) {
+          if (qr_version == 3) {
+            // Upscale only if small QR Code
+            for (int i1 = 0; i1 < 2; i1++)
+              for (int i2 = 0; i2 < 2; i2++)
+                display.drawPixel(x * 2 + i1, y * 2 + i2, SSD1306_WHITE);
+          } else {
+            display.drawPixel(x, y, SSD1306_WHITE);
+          }
+
+        }
   }
 
   messageCanvas.setTextSize(1);
