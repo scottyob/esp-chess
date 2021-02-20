@@ -25,6 +25,9 @@
 // How big of buffer space to create for sending JSON MQTT messages/responses
 #define MESSAGE_LENGTH 1048
 
+// how often to heartbeat in stats
+#define REPORT_SECS 30
+
 enum class WifiState {
   kIdle = 0,          // Not yet started to initialize the board.
   kInitializing,      // Initializing and attempting WiFi connect

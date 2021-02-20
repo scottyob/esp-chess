@@ -62,6 +62,7 @@ void loop() {
   static auto wifiState = WifiState::kIdle;
   auto newWifiState = network.getState();
   String url;
+
   if (newWifiState != wifiState) {
     // WiFi status has changed.  We need to update the display
     wifiState = newWifiState;

@@ -8,7 +8,7 @@
 // NOTE: A guide to AWS IOT I followed is https://savjee.be/2019/07/connect-esp32-to-aws-iot-with-arduino-code/
 
 void Network::begin() {
-  pinMode(0, INPUT);
+  pinMode(0, INPUT); // On-Board button to reset all settings.
 
   loadCert(); // Load certs from flash
 
@@ -40,7 +40,7 @@ void Network::update() {
     ESPFlashString("/aws_cert_ca").set("");
     ESPFlashString("/aws_cert_crt").set("");
     ESPFlashString("/aws_cert_private").set("");
-    WiFi.disconnect(false,true);
+    WiFi.disconnect(false, true);
     delay(500);
     ESP.restart();
   }
@@ -91,14 +91,24 @@ void Network::updateDiagnostics() {
   // Only update once every now and again if WiFi is connected
   if ((nextDue > millis()) || (wifiState != InternalWifiState::kConnected))
     return;
-  nextDue = millis() + 1 * 1000; //Report in again in 1 seconds.
+  nextDue = millis() + REPORT_SECS * 1000; //Report in again in 30 seconds.
 
   // Build JSON document for stats
+  // See https://github.com/espressif/arduino-esp32/blob/master/cores/esp32/Esp.h
   StaticJsonDocument<200> doc;
   doc["version"] = VERSION;
-  doc["freeHeap"] = ESP.getFreeHeap();
+  doc["deviceName"] = deviceName;
   doc["uptime"] = millis();
-  doc["resetButton"] = digitalRead(0); // Handy to force reset the board
+  // Internal RAM
+  doc["heapSize"] = ESP.getHeapSize(); //total heap size
+  doc["freeHeap"] = ESP.getFreeHeap(); //available heap
+  doc["minFreeHeap"] = ESP.getMinFreeHeap(); //lowest level of free heap since boot
+  doc["maxAllocHeap"] = ESP.getMaxAllocHeap(); //largest block of heap that can be allocated at once
+  //SPI RAM
+  doc["psramSize"] = ESP.getPsramSize();
+  doc["freePsram"] = ESP.getFreePsram();
+  doc["minFreePsram"] = ESP.getMinFreePsram();
+  doc["maxAllocPsram"] = ESP.getMaxAllocPsram();
   serializeJsonPretty(doc, jsonBuffer, MESSAGE_LENGTH);
 
   // Write stats to serial
