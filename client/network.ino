@@ -168,6 +168,38 @@ void Network::beginMqtt() {
   // And we can subscribe to topics and send messages.
   Serial.println("Connected!");
   mqttState = InternalMqttState::kConnected;
+
+  // TODO:  Subscribe to interesting topics
+  client.subscribe(String("state/") + deviceName + String("/#"));
+  using namespace std::placeholders;  // for _1, _2, _3...
+
+  client.onMessage([&](String &topic, String &payload) {
+    this->messageReceived(topic, payload);
+  });
+  
+}
+
+// MQTT Message recieved.
+void Network::messageReceived(String &topic, String &payload) {
+  //Turn payload into JSON document
+  DynamicJsonDocument doc(MESSAGE_LENGTH);
+  deserializeJson(doc, payload);
+
+  // Run through the updates
+  if(topic.endsWith("ota")) {
+    Serial.println("OTA request recieved");
+    if(doc["version"] == VERSION) {
+      Serial.println("Ignoring OTA request.  Version matches");
+      return;
+    }
+    Serial.println("Running OTA update routine");
+    updater.update(doc["host"], doc["filename"]);
+    return;
+  }
+
+  Serial.println("Unhandled topic");
+  Serial.println(String("topic: ") + topic);
+  Serial.println(payload);
 }
 
 /*

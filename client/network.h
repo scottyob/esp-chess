@@ -5,6 +5,9 @@
 #include <WiFiClientSecure.h>
 #include <MQTTClient.h>
 #include "table.h"
+#include "ota.h"
+#include <WiFi.h>
+#include <Update.h>
 
 // How many times to try and connect to WiFi
 #define MAX_WIFI_ATTEMPTS  50
@@ -35,6 +38,7 @@ enum class WifiState {
   kInitializingCloud, // Connecting to the cloud service.
   kCertsRequired,     // Waiting for certificates to be uploaded
   kConnected,         // Connected to the service, looking good.
+  kUpdating,          // Performing OTA update
 };
 
 enum class InternalWifiState {
@@ -61,12 +65,16 @@ class Network {
     Table* table;
     char jsonBuffer[MESSAGE_LENGTH];
 
+    // Over the air update
+    OtaUpdater updater;
+
     WifiState state;
     InternalWifiState wifiState;
     InternalMqttState mqttState;
     unsigned long lastState;
     WiFiClientSecure net;  // MQTT Secure Network
     MQTTClient client;  // MQTT client
+
     WebServer server;
     void attemptWifiConnect();
     void attemptSmartConfig();
@@ -74,6 +82,7 @@ class Network {
     void startWebserver();
     void updateRemoteBoard();
     void updateDiagnostics();
+    void messageReceived(String &topic, String &payload);  // MQTT message received
   public:
     Network(Table* tableRef) : server(80), table(tableRef), client(MESSAGE_LENGTH) {}
     void begin();

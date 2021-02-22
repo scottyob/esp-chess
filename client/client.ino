@@ -16,11 +16,11 @@
      Adafruit_NeoPixel
      Qrcode
      EspFlash
-     MQTT Library https://github.com/256dpi/arduino-mqtt
+     MQTT Library https://github.com/256dpi/arduino-mqtt - NOTE:  Using head for now as git submodule
      ArduinoJson (benoit Blanchon)
 */
 
-#define VERSION   0.1
+#define VERSION   "0.1"
 #define PROD_DOMAIN "prod.d3rwxyk20q1igr.amplifyapp.com"
 #define LED_PIN   15  // Pin number LED strip is on.
 
