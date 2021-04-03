@@ -9,7 +9,6 @@
 
 void Network::begin() {
   pinMode(0, INPUT); // On-Board button to reset all settings.
-
   loadCert(); // Load certs from flash
 
   // Setup the WiFi
@@ -40,6 +39,7 @@ void Network::update() {
     ESPFlashString("/aws_cert_ca").set("");
     ESPFlashString("/aws_cert_crt").set("");
     ESPFlashString("/aws_cert_private").set("");
+    ESPFlashString("/environment").set("prod");
     WiFi.disconnect(false, true);
     delay(500);
     ESP.restart();
@@ -81,6 +81,23 @@ void Network::loadCert() {
   awsCertCa = ESPFlashString("/aws_cert_ca").get();
   awsCertCrt = ESPFlashString("/aws_cert_crt").get();
   awsCertPrivate = ESPFlashString("/aws_cert_private").get();
+  environment = ESPFlashString("/environment").get();
+
+  Serial.print("Missing populated configs: ");
+  Serial.println(missingConfig() ? "True" : "False");
+}
+
+/*
+ * If any of the settings are blank, will flag this as missing
+ * config.
+ */
+bool Network::missingConfig() {
+  return (
+    deviceName == "" ||
+    awsCertCa == "" ||
+    awsCertCrt == "" || 
+    awsCertPrivate == "" || 
+    environment == "");
 }
 
 /*
@@ -169,10 +186,8 @@ void Network::beginMqtt() {
   Serial.println("Connected!");
   mqttState = InternalMqttState::kConnected;
 
-  // TODO:  Subscribe to interesting topics
-  client.subscribe(String("state/") + deviceName + String("/#"));
-  using namespace std::placeholders;  // for _1, _2, _3...
-
+  // Subscribe to interesting topics, handle them
+  client.subscribe(String("state/") + deviceName);
   client.onMessage([&](String &topic, String &payload) {
     this->messageReceived(topic, payload);
   });
@@ -195,6 +210,8 @@ void Network::messageReceived(String &topic, String &payload) {
     Serial.println("Running OTA update routine");
     updater.update(doc["host"], doc["filename"]);
     return;
+  } else if(topic.startsWith("state/")) {
+    table->render(payload);
   }
 
   Serial.println("Unhandled topic");
@@ -317,7 +334,7 @@ void Network::updateRemoteBoard() {
   }
 
   // MQTT topic to update
-  String topic = "update/board/" + deviceName;
+  String topic = "update/board/" + environment + "/" + deviceName;
 
   table->getJsonState(jsonBuffer, MESSAGE_LENGTH);
 

@@ -21,7 +21,7 @@
 */
 
 #define VERSION   "0.1"
-#define PROD_DOMAIN "prod.d3rwxyk20q1igr.amplifyapp.com"
+#define PROD_DOMAIN "chess.scottyob.com"
 #define LED_PIN   15  // Pin number LED strip is on.
 
 // If this is in "simple mode", we need to give the pins we expect inputs on.
@@ -31,12 +31,15 @@ const uint8_t simpleInputPins[][2] = {
   {19, 18},
 };
 
-Table table(LED_PIN, true);
+Table table(LED_PIN);
 Network network(&table);
 ChessDisplay display;
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("***************************************************");
+  Serial.println("* ESP-Chess.  Software version " + String(VERSION));
+  Serial.println("***************************************************");
 
   //Initialize internal flash memory, format on fail.
   SPIFFS.begin(true);
@@ -48,14 +51,25 @@ void setup() {
   // Initialize the table memory & LED tests.
   Serial.println("Initializing Table");
 
-  const auto runTests = displaySuccess;
-  table.begin(runTests, simpleInputPins);
-  if (!displaySuccess)
-    table.error();
-
   // Initialize the network
   network.begin();
 
+  // Run LED tests if display init succeeded & missing configs.
+  auto runTests = network.missingConfig();
+  if(!displaySuccess)
+    runTests = false;
+
+  const auto tableSuccess = table.begin(runTests, simpleInputPins);
+  if (!displaySuccess) {
+    Serial.println("ERROR:  LCD initialization failure");
+    table.error();
+  }
+
+  if (!tableSuccess) {
+    display.update("", "Diagnostics\nFailure");
+    Serial.println("ERROR: Diagnostics failure");
+    table.error();
+  }
 }
 
 void loop() {
@@ -69,7 +83,7 @@ void loop() {
 
     switch (wifiState) {
       case WifiState::kInitializing:
-        display.update("", "Wifi Connecting");
+        display.update("", "Wifi\nConnecting");
         break;
       case WifiState::kWifiRequired:
         display.update("https://scottyob.github.io/esp-chess/wifi", "WiFi Setup\nRequired");
@@ -87,7 +101,11 @@ void loop() {
         display.update(url, "Acct Setup");
         break;
       default:
-        display.update("", "Connected!");
+        url = String("https://");
+        url += PROD_DOMAIN;
+        url += "/";
+        display.update(url, "Connected!");
+        table.mirrorLocations = false;
     }
   }
 

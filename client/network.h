@@ -6,8 +6,6 @@
 #include <MQTTClient.h>
 #include "table.h"
 #include "ota.h"
-#include <WiFi.h>
-#include <Update.h>
 
 // How many times to try and connect to WiFi
 #define MAX_WIFI_ATTEMPTS  50
@@ -58,7 +56,7 @@ enum class InternalMqttState {
 class Network {
   private:
     // Certificate Information
-    String deviceName, awsCertCa, awsCertPrivate, awsCertCrt;
+    String deviceName, awsCertCa, awsCertPrivate, awsCertCrt, environment;
     void loadCert(); // Loads cert info from flash
 
     // Table
@@ -91,6 +89,7 @@ class Network {
     WifiState getState() {
       return state;
     }
+    bool missingConfig();
 };
 
 #endif

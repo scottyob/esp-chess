@@ -69,6 +69,10 @@ bool ChessDisplay::begin() {
   if (!this->display.begin(SSD1306_SWITCHCAPVCC, address))
     return false;
 
+  // Draw out logo
+  display.clearDisplay();
+  display.drawBitmap(0, 0, LOGO_BIG, 128, 64, SSD1306_WHITE);
+
   // Display initialized successfully
   this->display.display();
   return true;;
