@@ -39,6 +39,8 @@ class BoardColor
       ORANGE,
       LIGHTGREEN,
       GOLD,
+      WHITISH,
+      GRAY,
     };
     BoardColor() = default;
     BoardColor(uint8_t val) {
@@ -62,6 +64,10 @@ class BoardColor
           return Adafruit_NeoPixel::Color(25,   25,   0);
         case GOLD:
           return Adafruit_NeoPixel::Color(249,   166,   2);
+        case WHITISH:
+          return Adafruit_NeoPixel::Color(200,   200,   200);
+        case GRAY:
+          return Adafruit_NeoPixel::Color(30,   30,   30);
         case NONE:
           return 0;
         default:
@@ -113,7 +119,7 @@ class Table {
     void error();
     // Update the table state
     void update();
-    void render(String& stateDoc);
+    void render(const int doc[GRID_SIZE][GRID_SIZE], int brightness);
 };
 
 

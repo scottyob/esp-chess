@@ -20,7 +20,7 @@
      ArduinoJson (benoit Blanchon)
 */
 
-#define VERSION   "0.1"
+#define VERSION   "1.0"
 #define PROD_DOMAIN "chess.scottyob.com"
 #define LED_PIN   15  // Pin number LED strip is on.
 
@@ -70,6 +70,12 @@ void setup() {
     Serial.println("ERROR: Diagnostics failure");
     table.error();
   }
+
+  network.onMessage([&](const String &message) {
+    Serial.print("Displaying called back message: ");
+    Serial.println(message);
+    display.update(message);
+  });
 }
 
 void loop() {
@@ -83,10 +89,10 @@ void loop() {
 
     switch (wifiState) {
       case WifiState::kInitializing:
-        display.update("", "Wifi\nConnecting");
+        display.update("", "\n\nWifi\nConnecting");
         break;
       case WifiState::kWifiRequired:
-        display.update("https://scottyob.github.io/esp-chess/wifi", "WiFi Setup\nRequired");
+        display.update("https://scottyob.github.io/esp-chess/wifi", "\n\nWiFi Setup\nRequired");
         break;
       case WifiState::kCertsRequired:
         // Build a URL
@@ -98,13 +104,13 @@ void loop() {
         Serial.println(url);
 
         // display URL for setting up account
-        display.update(url, "Acct Setup");
+        display.update(url, "\n\nAcct Setup\nRequired");
         break;
       default:
         url = String("https://");
         url += PROD_DOMAIN;
         url += "/";
-        display.update(url, "Connected!");
+        display.update(url, "\n\nConnected!");
         table.mirrorLocations = false;
     }
   }

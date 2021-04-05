@@ -187,15 +187,21 @@ void Network::beginMqtt() {
   mqttState = InternalMqttState::kConnected;
 
   // Subscribe to interesting topics, handle them
-  client.subscribe(String("state/") + deviceName);
+  client.subscribe(String("state/") + deviceName + "/#");
   client.onMessage([&](String &topic, String &payload) {
     this->messageReceived(topic, payload);
   });
-  
+
+  // Send the initial board state across.
+  table->requiresUpdate = true;
+  updateRemoteBoard();
 }
 
 // MQTT Message recieved.
 void Network::messageReceived(String &topic, String &payload) {
+  Serial.println("Received Message: ");
+  Serial.println(payload);
+  
   //Turn payload into JSON document
   DynamicJsonDocument doc(MESSAGE_LENGTH);
   deserializeJson(doc, payload);
@@ -208,10 +214,19 @@ void Network::messageReceived(String &topic, String &payload) {
       return;
     }
     Serial.println("Running OTA update routine");
+    updateMessage("System\nUpdateing...\n\nPlease\nwait...");
     updater.update(doc["host"], doc["filename"]);
     return;
   } else if(topic.startsWith("state/")) {
-    table->render(payload);
+    table->mirrorLocations = false;
+    int values[GRID_SIZE][GRID_SIZE];
+    copyArray(doc["state"], values);
+    
+    table->render(values, doc["brightness"] || 255);
+    if(doc["mirror"])
+      table->mirrorLocations = true;
+    updateMessage(doc["message"]);
+    return;
   }
 
   Serial.println("Unhandled topic");
@@ -368,4 +383,17 @@ void Network::attemptSmartConfig() {
 
 String Network::getIp() {
   return WiFi.localIP().toString();
+}
+
+/*
+ * Runs the callback, if set to display a new status
+ * message.
+ */
+void Network::updateMessage(const String& message) {
+  if(!messageCallback || !message)
+    return;
+   Serial.print("Running with callback message: ");
+   Serial.println(message);
+   messageCallback(message);
+  
 }

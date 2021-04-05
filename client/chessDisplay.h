@@ -132,6 +132,7 @@ class ChessDisplay {
     ChessDisplay() : display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, CHESS_DISPLAY_OLED_RESET), messageCanvas(64, 64) {}
     bool begin();
     void update(String url, String message);
+    void update(const String &message);
 };
 
 #endif

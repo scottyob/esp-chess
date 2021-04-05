@@ -80,15 +80,13 @@ bool ChessDisplay::begin() {
 
 void ChessDisplay::update(String url, String message) {
   auto qr_version = 11;
-  if(url.length() < 53) {
+  if (url.length() < 53) {
     qr_version = 3;
   }
-  
+
   uint8_t qrcodeData[qrcode_getBufferSize(qr_version)];
 
   display.clearDisplay();  // Clear display buffer
-  messageCanvas.fillScreen(SSD1306_BLACK);
-
   if (url == "") {
     // Draw logo bitmap for left hand side
     display.drawBitmap(0, 0, LOGO, 64, 64, SSD1306_WHITE);
@@ -111,6 +109,16 @@ void ChessDisplay::update(String url, String message) {
         }
   }
 
+  update(message);
+  this->display.display();
+}
+
+/*
+ * Sets text on the right hand side of the screen
+ */
+void ChessDisplay::update(const String& message) {
+  messageCanvas.fillScreen(SSD1306_BLACK);
+
   messageCanvas.setTextSize(1);
   messageCanvas.setTextColor(SSD1306_WHITE);
   messageCanvas.setCursor(0, 0);
@@ -122,6 +130,8 @@ void ChessDisplay::update(String url, String message) {
     for (int y = 0; y < 64; y++) {
       if (messageCanvas.getPixel(x, y)) {
         display.drawPixel(x + 64, y, SSD1306_WHITE);
+      } else {
+        display.drawPixel(x + 64, y, SSD1306_BLACK);
       }
     }
   }

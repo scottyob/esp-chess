@@ -111,6 +111,10 @@ bool Table::begin(const bool& runTest, const uint8_t simpleInputPins[][SIMPLE_GR
       }
   }
 
+  // Setup the initial board state.
+  updatePieceLocations();
+  requiresUpdate = false;
+
   return true;
 }
 
@@ -225,25 +229,18 @@ void colorWipe(Adafruit_NeoPixel & p, uint32_t color, int wait) {
 
 // Perform a quick test to cycle through each LED color.
 void led_test(Adafruit_NeoPixel & p, const int& ledCount) {
-  // 50% brightness, max power draw to be kind to USB power supplies.
-//  p.setBrightness(32);
-  
   colorWipe(p, p.Color(255,   0,   0)     , 60); // Red
   colorWipe(p, p.Color(  0, 255,   0)     , 60); // Green
   colorWipe(p, p.Color(  0,   0, 255)     , 60); // Blue
   colorWipe(p, p.Color(255, 255, 255)     , 60); // White
-
-  // And assume we don't light up too much of the board.
-//  p.setBrightness(256);
 }
 
-void Table::render(String& json) {
-  static DynamicJsonDocument doc(JSONBOARD_SIZE_T);
-  deserializeJson(doc, json);
-
+void Table::render(const int doc[GRID_SIZE][GRID_SIZE], int brightness) {
+  //static DynamicJsonDocument doc(JSONBOARD_SIZE_T);
+  //deserializeJson(doc, json);
   for (int y = 0; y < GRID_SIZE; y++) {
     for (int x = 0; x < GRID_SIZE; x++) {
-      uint8_t gridState = doc["state"][y][x];
+      uint8_t gridState = doc[y][x];
       auto color = BoardColor(gridState).color();
       if (!color)
         color = Adafruit_NeoPixel::Color(
@@ -259,8 +256,9 @@ void Table::render(String& json) {
 // Gets a JSON state into buffer;
 void Table::getJsonState(char* buffer, size_t bufferSize) {
   static DynamicJsonDocument doc(JSONBOARD_SIZE_T);
-
   doc.clear();
+  doc["version"] = VERSION;
+  
   for (int y = 0; y < GRID_SIZE; y++) {
     for (int x = 0; x < GRID_SIZE; x++) {
       doc["state"][y][x] = (int)board[y][x].filled;

@@ -24,7 +24,7 @@
 #define AWS_MAX_RECONNECT_TRIES 50
 
 // How big of buffer space to create for sending JSON MQTT messages/responses
-#define MESSAGE_LENGTH 1048
+#define MESSAGE_LENGTH 3048
 
 // how often to heartbeat in stats
 #define REPORT_SECS 30
@@ -74,6 +74,8 @@ class Network {
     MQTTClient client;  // MQTT client
 
     WebServer server;
+    void (*messageCallback)(const String &message);
+    
     void attemptWifiConnect();
     void attemptSmartConfig();
     void beginMqtt();
@@ -81,10 +83,16 @@ class Network {
     void updateRemoteBoard();
     void updateDiagnostics();
     void messageReceived(String &topic, String &payload);  // MQTT message received
+    void updateMessage(const String &message);
   public:
-    Network(Table* tableRef) : server(80), table(tableRef), client(MESSAGE_LENGTH) {}
+    Network(Table* tableRef) : server(80), table(tableRef), client(MESSAGE_LENGTH) {
+      messageCallback = NULL; 
+    }
     void begin();
     void update();
+    void onMessage(void(* callback)(const String &message)) {
+      this->messageCallback = callback;
+    }
     String getIp();        // URL to setup the certs
     WifiState getState() {
       return state;
