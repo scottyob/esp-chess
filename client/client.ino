@@ -20,7 +20,7 @@
      ArduinoJson (benoit Blanchon)
 */
 
-#define VERSION   "1.01"
+#define VERSION   "1.02"
 #define PROD_DOMAIN "chess.scottyob.com"
 #define LED_PIN   15  // Pin number LED strip is on.
 
@@ -56,7 +56,7 @@ void setup() {
 
   // Run LED tests if display init succeeded & missing configs.
   auto runTests = network.missingConfig();
-  if(!displaySuccess)
+  if (!displaySuccess)
     runTests = false;
 
   const auto tableSuccess = table.begin(runTests, simpleInputPins);
@@ -71,7 +71,7 @@ void setup() {
     table.error();
   }
 
-  network.onMessage([&](const String &message) {
+  network.onMessage([&](const String & message) {
     Serial.print("Displaying called back message: ");
     Serial.println(message);
     display.update(message);
@@ -113,6 +113,14 @@ void loop() {
         display.update(url, "\n\nConnected!");
         table.mirrorLocations = false;
     }
+  }
+
+  // Sleep the display if no activity for an extended period of time
+  // (10 minutes)
+  if (millis() - table.getLastActivity() > 60 * 1000 * 10) {
+    display.off();
+  } else {
+    display.on();
   }
 
   // Update the main table components

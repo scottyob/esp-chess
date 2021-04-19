@@ -125,6 +125,7 @@ const unsigned char LOGO_BIG [] PROGMEM = {
 */
 class ChessDisplay {
   private:
+    bool isOn = true;
     Adafruit_SSD1306 display;    // Main display driver
     GFXcanvas1 messageCanvas;  // Canvas just for rendering text to the right hand side
     QRCode qrcode;
@@ -133,6 +134,20 @@ class ChessDisplay {
     bool begin();
     void update(String url, String message);
     void update(const String &message);
+
+    // Sets the state for the display
+    void off() {
+      if(!isOn)
+        return;
+      isOn = false;
+      display.ssd1306_command(SSD1306_DISPLAYOFF);
+    }
+    void on() {
+      if(isOn)
+        return;
+      isOn = true;
+      display.ssd1306_command(SSD1306_DISPLAYON);
+    }
 };
 
 #endif

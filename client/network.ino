@@ -201,6 +201,9 @@ void Network::beginMqtt() {
 void Network::messageReceived(String &topic, String &payload) {
   Serial.println("Received Message: ");
   Serial.println(payload);
+
+  // Update last activity
+  table->lastActivity = millis();
   
   //Turn payload into JSON document
   DynamicJsonDocument doc(MESSAGE_LENGTH);

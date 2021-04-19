@@ -106,10 +106,12 @@ class Table {
   public:
     bool mirrorLocations;  // Should we mirror the locations of pieces on the board?  Good for testing/setup.
     bool requiresUpdate;
+    unsigned long lastActivity;
 
     Table(int led_pin) : pixels(SIMPLE_GRID_LEDS, led_pin, NEO_GRB + NEO_KHZ800) {
       this->mirrorLocations = true;
       requiresUpdate = false;
+      lastActivity = millis();
     }
     // Initializes LED display, runs through tests
     bool begin(const bool& runTest, const uint8_t simpleInputPins[][SIMPLE_GRID_SIZE]);
@@ -120,6 +122,9 @@ class Table {
     // Update the table state
     void update();
     void render(const int doc[GRID_SIZE][GRID_SIZE], int brightness);
+    unsigned long getLastActivity() {
+      return lastActivity;
+    }
 };
 
 
