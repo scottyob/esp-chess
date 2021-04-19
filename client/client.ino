@@ -20,7 +20,7 @@
      ArduinoJson (benoit Blanchon)
 */
 
-#define VERSION   "1.0"
+#define VERSION   "1.01"
 #define PROD_DOMAIN "chess.scottyob.com"
 #define LED_PIN   15  // Pin number LED strip is on.
 

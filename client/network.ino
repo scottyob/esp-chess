@@ -220,6 +220,12 @@ void Network::messageReceived(String &topic, String &payload) {
   } else if(topic.startsWith("state/")) {
     table->mirrorLocations = false;
     int values[GRID_SIZE][GRID_SIZE];
+    if(doc["updateRequired"]) {
+      // Remote side has requested we update the boards state
+      table->requiresUpdate = true;
+      return;
+    }
+    
     copyArray(doc["state"], values);
     
     table->render(values, doc["brightness"] || 255);

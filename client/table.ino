@@ -180,7 +180,7 @@ void Table::mirrorBoard() {
       if (this->board[y][x].filled) {
         color = 0;
       }
-      this->pixels.setPixelColor(this->board[y][x].ledNumber, color, this->board[y][x].filled ? 255 : color, color);
+      this->pixels.setPixelColor(this->board[y][x].ledNumber, color, this->board[y][x].filled ? 32 : color, color);
     }
   this->pixels.show();
 }
