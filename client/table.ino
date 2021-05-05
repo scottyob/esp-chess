@@ -266,3 +266,20 @@ void Table::getJsonState(char* buffer, size_t bufferSize) {
   }
   serializeJson(doc, buffer, bufferSize);
 }
+
+// Is the piece in top left (origin) only enabled
+bool Table::isPortalSetupMode() {
+  updatePieceLocations();
+  if(!board[0][0].filled)
+    return false;
+  for(int y = 0; y < GRID_SIZE; y++) {
+    for(int x = 0; x < GRID_SIZE; x++) {
+      // Skip past origin
+      if(!y && !x)
+        continue;
+      if(board[y][x].filled)
+        return false;
+    }
+  }
+  return true;
+}

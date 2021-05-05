@@ -1,6 +1,8 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
+#include <ESP_WiFiManager.h>
+
 #include <WebServer.h>
 #include <WiFiClientSecure.h>
 #include <MQTTClient.h>
@@ -33,6 +35,7 @@ enum class WifiState {
   kIdle = 0,          // Not yet started to initialize the board.
   kInitializing,      // Initializing and attempting WiFi connect
   kWifiRequired,      // Waiting for WiFi credentials
+  kWifiPortalRequired,      // Waiting for WiFi credentials via portal
   kInitializingCloud, // Connecting to the cloud service.
   kCertsRequired,     // Waiting for certificates to be uploaded
   kConnected,         // Connected to the service, looking good.
@@ -74,7 +77,11 @@ class Network {
     MQTTClient client;  // MQTT client
 
     WebServer server;
-    void (*messageCallback)(const String &message);
+    void (*messageCallback)(const String &qr, const String &message);
+
+    // WiFi manager for config portal
+    // (when we cannot sniff 2.4Ghz config)
+    ESP_WiFiManager ESP_wifiManager;
     
     void attemptWifiConnect();
     void attemptSmartConfig();
@@ -83,16 +90,20 @@ class Network {
     void updateRemoteBoard();
     void updateDiagnostics();
     void messageReceived(String &topic, String &payload);  // MQTT message received
-    void updateMessage(const String &message);
+    void updateMessage(const String &message) {
+      updateMessage("", message);
+    }
+    void updateMessage(const String &qr, const String &message);
   public:
-    Network(Table* tableRef) : server(80), table(tableRef), client(MESSAGE_LENGTH) {
+    Network(Table* tableRef) : server(80), table(tableRef), client(MESSAGE_LENGTH), ESP_wifiManager("ESP_Chess") {
       messageCallback = NULL; 
     }
     void begin();
     void update();
-    void onMessage(void(* callback)(const String &message)) {
+    void onMessage(void(* callback)(const String &qr, const String &message)) {
       this->messageCallback = callback;
     }
+
     String getIp();        // URL to setup the certs
     WifiState getState() {
       return state;

@@ -125,6 +125,7 @@ class Table {
     unsigned long getLastActivity() {
       return lastActivity;
     }
+    bool isPortalSetupMode(); // Is the piece in top left (origin) only enabled
 };
 
 

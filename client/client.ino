@@ -40,8 +40,8 @@ void setup() {
   Serial.println("***************************************************");
   Serial.println("* ESP-Chess.  Software version " + String(VERSION));
   Serial.println("***************************************************");
-
   //Initialize internal flash memory, format on fail.
+  randomSeed(analogRead(0));
   SPIFFS.begin(true);
 
   //Initialize the I2C bus & Display
@@ -71,10 +71,10 @@ void setup() {
     table.error();
   }
 
-  network.onMessage([&](const String & message) {
+  network.onMessage([&](const String &qr, const String &message) {
     Serial.print("Displaying called back message: ");
     Serial.println(message);
-    display.update(message);
+    display.update(qr, message);
   });
 }
 

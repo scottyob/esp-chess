@@ -79,6 +79,11 @@ bool ChessDisplay::begin() {
 }
 
 void ChessDisplay::update(String url, String message) {
+  if(url.length() == 0) {
+    update(message);
+    return;
+  }
+  
   auto qr_version = 11;
   if (url.length() < 53) {
     qr_version = 3;

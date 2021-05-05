@@ -39,7 +39,7 @@ void Network::update() {
     ESPFlashString("/aws_cert_ca").set("");
     ESPFlashString("/aws_cert_crt").set("");
     ESPFlashString("/aws_cert_private").set("");
-    ESPFlashString("/environment").set("prod");
+    ESPFlashString("/environment").set("");
     WiFi.disconnect(false, true);
     delay(500);
     ESP.restart();
@@ -82,22 +82,25 @@ void Network::loadCert() {
   awsCertCrt = ESPFlashString("/aws_cert_crt").get();
   awsCertPrivate = ESPFlashString("/aws_cert_private").get();
   environment = ESPFlashString("/environment").get();
+  if (environment.length() == 0) {
+    environment = "prod";
+  }
 
   Serial.print("Missing populated configs: ");
   Serial.println(missingConfig() ? "True" : "False");
 }
 
 /*
- * If any of the settings are blank, will flag this as missing
- * config.
- */
+   If any of the settings are blank, will flag this as missing
+   config.
+*/
 bool Network::missingConfig() {
   return (
-    deviceName == "" ||
-    awsCertCa == "" ||
-    awsCertCrt == "" || 
-    awsCertPrivate == "" || 
-    environment == "");
+           deviceName == "" ||
+           awsCertCa == "" ||
+           awsCertCrt == "" ||
+           awsCertPrivate == "" ||
+           environment == "");
 }
 
 /*
@@ -188,7 +191,7 @@ void Network::beginMqtt() {
 
   // Subscribe to interesting topics, handle them
   client.subscribe(String("state/") + deviceName + "/#");
-  client.onMessage([&](String &topic, String &payload) {
+  client.onMessage([&](String & topic, String & payload) {
     this->messageReceived(topic, payload);
   });
 
@@ -204,15 +207,15 @@ void Network::messageReceived(String &topic, String &payload) {
 
   // Update last activity
   table->lastActivity = millis();
-  
+
   //Turn payload into JSON document
   DynamicJsonDocument doc(MESSAGE_LENGTH);
   deserializeJson(doc, payload);
 
   // Run through the updates
-  if(topic.endsWith("ota")) {
+  if (topic.endsWith("ota")) {
     Serial.println("OTA request recieved");
-    if(doc["version"] == VERSION) {
+    if (doc["version"] == VERSION) {
       Serial.println("Ignoring OTA request.  Version matches");
       return;
     }
@@ -220,19 +223,19 @@ void Network::messageReceived(String &topic, String &payload) {
     updateMessage("System\nUpdateing...\n\nPlease\nwait...");
     updater.update(doc["host"], doc["filename"]);
     return;
-  } else if(topic.startsWith("state/")) {
+  } else if (topic.startsWith("state/")) {
     table->mirrorLocations = false;
     int values[GRID_SIZE][GRID_SIZE];
-    if(doc["updateRequired"]) {
+    if (doc["updateRequired"]) {
       // Remote side has requested we update the boards state
       table->requiresUpdate = true;
       return;
     }
-    
+
     copyArray(doc["state"], values);
-    
+
     table->render(values, doc["brightness"] || 255);
-    if(doc["mirror"])
+    if (doc["mirror"])
       table->mirrorLocations = true;
     updateMessage(doc["message"]);
     return;
@@ -342,6 +345,24 @@ void Network::attemptWifiConnect() {
       ESP.restart();
     }
 
+    /* If there's a single piece set on the board at origin
+       assume we don't want SmartConfig and setup an SSID instead
+       using the portal mode.
+    */
+    if (table->isPortalSetupMode()) {
+      String password = "";
+      for (int i = 0; i < 8; i++) {
+        int c = random(int('z') - int('a')) + int('a');
+        password += String(char(c));
+      }
+
+      this->state = WifiState::kWifiPortalRequired;
+      String qr = String("WIFI:S:ESP Chess;T:WPA;P:") + password + String(";;");
+      updateMessage(qr, "\nNetwork:\nESP Chess\n\nPassword:\n" + password);
+      ESP_wifiManager.startConfigPortal("ESP Chess", password.c_str());
+      return;
+    }
+
     // Setup SmartConfig to get new credentials.
     Serial.println("Attempting to setup SmartConfig");
     attemptedSmartConfig = true;
@@ -395,14 +416,14 @@ String Network::getIp() {
 }
 
 /*
- * Runs the callback, if set to display a new status
- * message.
- */
-void Network::updateMessage(const String& message) {
-  if(!messageCallback || !message)
+   Runs the callback, if set to display a new status
+   message.
+*/
+void Network::updateMessage(const String& qr, const String& message) {
+  if (!messageCallback || !message)
     return;
-   Serial.print("Running with callback message: ");
-   Serial.println(message);
-   messageCallback(message);
-  
+  Serial.print("Running with callback message: ");
+  Serial.println(message);
+  messageCallback(qr, message);
+
 }
