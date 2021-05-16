@@ -145,6 +145,7 @@ void Table::updatePieceLocations() {
 
       if (board[y][x].filled != old) {
         changed = true;
+        lastActivity = millis();
       }
     }
   }
@@ -282,4 +283,15 @@ bool Table::isPortalSetupMode() {
     }
   }
   return true;
+}
+
+// Populates 64 square array with '1' or ' '
+void Table::populateSquares(char* squares) {
+  int pos = 0;
+  for(int y = 0; y < GRID_SIZE; y++) {
+    for(int x = 0; x < GRID_SIZE; x++) {
+      squares[pos++] = board[y][x].filled ? '1' : ' ';
+    }
+  }
+  squares[pos] = '\0';
 }

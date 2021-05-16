@@ -6,6 +6,7 @@
 #include <WebServer.h>
 #include <WiFiClientSecure.h>
 #include <MQTTClient.h>
+#include "chess.h"
 #include "table.h"
 #include "ota.h"
 
@@ -64,6 +65,7 @@ class Network {
 
     // Table
     Table* table;
+    Chess* engine;
     char jsonBuffer[MESSAGE_LENGTH];
 
     // Over the air update
@@ -75,6 +77,7 @@ class Network {
     unsigned long lastState;
     WiFiClientSecure net;  // MQTT Secure Network
     MQTTClient client;  // MQTT client
+    String remotePlayer; //The opponent we're currently watching for updates.
 
     WebServer server;
     void (*messageCallback)(const String &qr, const String &message);
@@ -87,7 +90,6 @@ class Network {
     void attemptSmartConfig();
     void beginMqtt();
     void startWebserver();
-    void updateRemoteBoard();
     void updateDiagnostics();
     void messageReceived(String &topic, String &payload);  // MQTT message received
     void updateMessage(const String &message) {
@@ -95,14 +97,22 @@ class Network {
     }
     void updateMessage(const String &qr, const String &message);
   public:
-    Network(Table* tableRef) : server(80), table(tableRef), client(MESSAGE_LENGTH), ESP_wifiManager("ESP_Chess") {
+    Network(Chess* engineRef, Table* tableRef) : 
+      server(80),
+      engine(engineRef),
+      table(tableRef),
+      client(MESSAGE_LENGTH),
+      ESP_wifiManager("ESP_Chess")
+    {
       messageCallback = NULL; 
     }
     void begin();
     void update();
+    void updateBoard();
     void onMessage(void(* callback)(const String &qr, const String &message)) {
       this->messageCallback = callback;
     }
+    String getDeviceName() { return deviceName; }
 
     String getIp();        // URL to setup the certs
     WifiState getState() {

@@ -4,6 +4,7 @@
 #include "chessDisplay.h"
 #include "table.h"
 #include "network.h"
+#include "chess.h"
 
 /*
    ESP-Chess Board Client.
@@ -20,7 +21,7 @@
      ArduinoJson (benoit Blanchon)
 */
 
-#define VERSION   "1.03"
+#define VERSION   "1.1alpha1"
 #define PROD_DOMAIN "chess.scottyob.com"
 #define LED_PIN   15  // Pin number LED strip is on.
 
@@ -32,7 +33,8 @@ const uint8_t simpleInputPins[][2] = {
 };
 
 Table table(LED_PIN);
-Network network(&table);
+Chess engine(&table);
+Network network(&engine, &table);
 ChessDisplay display;
 
 void setup() {
@@ -71,11 +73,14 @@ void setup() {
     table.error();
   }
 
-  network.onMessage([&](const String &qr, const String &message) {
-    Serial.print("Displaying called back message: ");
-    Serial.println(message);
-    display.update(qr, message);
-  });
+  network.onMessage(&messageCallback);
+  engine.onMessage(&messageCallback);
+}
+
+void messageCallback(const String &qr, const String &message) {
+  Serial.print("Displaying called back message: ");
+  Serial.println(message);
+  display.update(qr, message);
 }
 
 void loop() {
@@ -110,7 +115,7 @@ void loop() {
         url = String("https://");
         url += PROD_DOMAIN;
         url += "/";
-        display.update(url, "\n\nConnected!");
+        display.update(url, "Connected!\n\nLoading\nGame");
         table.mirrorLocations = false;
     }
   }
@@ -126,4 +131,10 @@ void loop() {
   // Update the main table components
   table.update();
   network.update();
+
+  if (table.requiresUpdate && !table.mirrorLocations) {
+    engine.didUpdate();
+    table.requiresUpdate = false;
+  }
+
 }

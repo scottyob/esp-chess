@@ -66,7 +66,12 @@ void Network::update() {
         delay(1000);
         ESP.restart();
       }
-      updateRemoteBoard();
+
+      // Push out our new state if required.
+      if (engine->needsPublishing)
+        updateBoard();
+      engine->needsPublishing = false;
+
       client.loop();
       return;
   }
@@ -190,14 +195,15 @@ void Network::beginMqtt() {
   mqttState = InternalMqttState::kConnected;
 
   // Subscribe to interesting topics, handle them
-  client.subscribe(String("state/") + deviceName + "/#");
+  String prefix = String("$aws/things/") + deviceName + "/shadow";
+  client.subscribe(prefix + "/update/accepted");
+  client.subscribe(prefix + "/get/accepted");
+  client.subscribe("reboot");
+  client.subscribe("ota");
   client.onMessage([&](String & topic, String & payload) {
     this->messageReceived(topic, payload);
   });
-
-  // Send the initial board state across.
-  table->requiresUpdate = true;
-  updateRemoteBoard();
+  client.publish(prefix + "/get", "{}"); //Request initial document
 }
 
 // MQTT Message recieved.
@@ -205,14 +211,16 @@ void Network::messageReceived(String &topic, String &payload) {
   Serial.println("Received Message: ");
   Serial.println(payload);
 
-  // Update last activity
-  table->lastActivity = millis();
-
   //Turn payload into JSON document
   DynamicJsonDocument doc(MESSAGE_LENGTH);
   deserializeJson(doc, payload);
 
   // Run through the updates
+  if (topic.endsWith("reboot")) {
+    Serial.println("Reboot requested");
+    ESP.restart();
+  }
+
   if (topic.endsWith("ota")) {
     Serial.println("OTA request recieved");
     if (doc["version"] == VERSION) {
@@ -223,21 +231,57 @@ void Network::messageReceived(String &topic, String &payload) {
     updateMessage("System\nUpdateing...\n\nPlease\nwait...");
     updater.update(doc["host"], doc["filename"]);
     return;
-  } else if (topic.startsWith("state/")) {
-    table->mirrorLocations = false;
-    int values[GRID_SIZE][GRID_SIZE];
-    if (doc["updateRequired"]) {
-      // Remote side has requested we update the boards state
-      table->requiresUpdate = true;
-      return;
+  } else if (topic.endsWith("/get/accepted") || topic.endsWith("/update/accepted")) {
+    // Either we have a new state, or our remote board has a new state.  Perform the update
+    ChessState r; //Recieved state
+    r.halfMoveCount = doc["state"]["desired"]["halfMoveCount"];
+    r.fen = doc["state"]["desired"]["fen"].as<String>();
+    r.previousFen = doc["state"]["desired"]["previousFen"].as<String>();
+    r.isWhite = doc["state"]["desired"]["isWhite"];
+    r.remotePlayer = doc["state"]["desired"]["remotePlayer"].as<String>();
+    r.fromRemote = true;
+    JsonArray historyArray = doc["state"]["desired"]["history"].as<JsonArray>();
+    r.history.clear();
+    for(auto  v: historyArray) {
+      Move m;
+      m.src = v["src"].as<String>();
+      m.dst = v["dst"].as<String>();
+      r.history.push_back(m);
     }
 
-    copyArray(doc["state"], values);
+    // Is this local or remote board?
+    bool isLocal = topic.indexOf(deviceName) != -1;
+    
+    // Update our game engine with the new state, forcing update if we're the same
+    // board.
+    engine->updateRecieved(r, isLocal);
 
-    table->render(values, doc["brightness"] || 255);
-    if (doc["mirror"])
-      table->mirrorLocations = true;
-    updateMessage(doc["message"]);
+    // Only subscribe to new opponent if we're not looking at old opponent
+    // status
+    if(!isLocal)
+      return;
+
+    // Check our opponent.
+    String newRemote = doc["state"]["desired"]["remotePlayer"];
+    if (newRemote == deviceName)
+      return;
+    if (newRemote == remotePlayer)
+      return;
+
+    // We have an opponent we should be watching for.
+    String prefix = String("$aws/things/") + newRemote + "/shadow";
+
+    // Unsubscribe from our old remote
+    if (remotePlayer) {
+      client.unsubscribe(String("$aws/things/") + remotePlayer + "/get/accepted");
+      client.unsubscribe(String("$aws/things/") + remotePlayer + "/update/accepted");
+    }
+    remotePlayer = newRemote;
+
+    // subscribe to our new remote player, get the state
+    client.subscribe(prefix + "/get/accepted");
+    client.subscribe(prefix + "/update/accepted");
+    client.publish(prefix + "/get");
     return;
   }
 
@@ -372,34 +416,6 @@ void Network::attemptWifiConnect() {
   }
 }
 
-void Network::updateRemoteBoard() {
-  // Only send an MQTT update if one is required.
-  if (!table->requiresUpdate) {
-    return;
-  }
-
-  // MQTT topic to update
-  String topic = "update/board/" + environment + "/" + deviceName;
-
-  table->getJsonState(jsonBuffer, MESSAGE_LENGTH);
-
-  // Serialize the board state to JSON
-  //serializeJson(table->getJsonState(), jsonBuffer);
-
-  // Debug some information.  Show the data and topic that was published
-  Serial.print("Publishing to topic: ");
-  Serial.println(topic);
-  Serial.print("Data: ");
-  Serial.println(jsonBuffer);
-
-  // Publish the message to AWS
-  client.publish(topic, jsonBuffer);
-
-  // Flag update as being sent.
-  table->requiresUpdate = false;
-
-}
-
 void Network::attemptSmartConfig() {
   // Check if we're still waiting for SmartConfig
   if (!WiFi.smartConfigDone())
@@ -413,6 +429,31 @@ void Network::attemptSmartConfig() {
 
 String Network::getIp() {
   return WiFi.localIP().toString();
+}
+
+/*
+   Updates the remote MQTT to reflect our board state.
+*/
+void Network::updateBoard() {
+  static DynamicJsonDocument doc(JSONBOARD_SIZE_T);
+  doc.clear();
+  doc["state"]["desired"]["halfMoveCount"] = engine->gameState.halfMoveCount;
+  doc["state"]["desired"]["fen"] = engine->gameState.fen;
+  doc["state"]["desired"]["previousFen"] = engine->gameState.previousFen;
+  doc["state"]["desired"]["isWhite"] = engine->gameState.isWhite;
+  doc["state"]["desired"]["remotePlayer"] = engine->gameState.remotePlayer;
+  JsonArray history = doc["state"]["desired"].createNestedArray("history");
+  for(auto &h : engine->gameState.history) {
+    auto o = history.createNestedObject();
+    o["src"] = h.src;
+    o["dst"] = h.dst;
+  }
+    
+  serializeJson(doc, jsonBuffer, MESSAGE_LENGTH);
+  String prefix = String("$aws/things/") + deviceName + "/shadow";
+  Serial.print("Publishing game state: ");
+  Serial.println(jsonBuffer);  
+  client.publish(prefix + "/update", jsonBuffer);
 }
 
 /*

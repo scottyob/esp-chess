@@ -87,7 +87,6 @@ class BoardColor
    8x8 grid.
 */
 class Table {
-    BoardLocation_T board[GRID_SIZE][GRID_SIZE] = {{BoardLocation_T()}};  // State of the board
     bool simpleMode;  // If we are in a simple debug mode
     // MCP IO Expanders
     MCP23017 mcp[4] = {
@@ -104,6 +103,7 @@ class Table {
     int discoveredExpanders();
 
   public:
+    BoardLocation_T board[GRID_SIZE][GRID_SIZE] = {{BoardLocation_T()}};  // State of the board
     bool mirrorLocations;  // Should we mirror the locations of pieces on the board?  Good for testing/setup.
     bool requiresUpdate;
     unsigned long lastActivity;
@@ -126,6 +126,7 @@ class Table {
       return lastActivity;
     }
     bool isPortalSetupMode(); // Is the piece in top left (origin) only enabled
+    void populateSquares(char* squares);  // Populates 64 square array with '1' or ' '
 };
 
 
