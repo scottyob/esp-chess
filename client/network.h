@@ -91,7 +91,7 @@ class Network {
     void beginMqtt();
     void startWebserver();
     void updateDiagnostics();
-    void messageReceived(String &topic, String &payload);  // MQTT message received
+    void messageReceived(const String &topic, const String &payload);  // MQTT message received
     void updateMessage(const String &message) {
       updateMessage("", message);
     }

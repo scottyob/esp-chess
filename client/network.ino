@@ -2,7 +2,7 @@
 #include "WiFi.h"
 #include "ESPFlashString.h"
 #include <ArduinoJson.h>
-
+#include <HTTPClient.h>
 #include <sstream>
 
 // NOTE: A guide to AWS IOT I followed is https://savjee.be/2019/07/connect-esp32-to-aws-iot-with-arduino-code/
@@ -58,8 +58,23 @@ void Network::update() {
   // Attempt to update MQTT state if not connected
   switch (this->mqttState) {
     case InternalMqttState::kIdle:
-      beginMqtt();
-      return;
+      {
+        // First check version updates
+        updateMessage("", "Checking\nFor\nUpdates...");
+        HTTPClient http;
+        http.begin("http://scottyob-pub.s3-us-west-2.amazonaws.com/version.json");
+        int httpCode = http.GET();
+        if (httpCode == HTTP_CODE_OK) {
+          String payload = http.getString();
+          messageReceived("ota", payload);
+        }
+
+        //start MQTT service.
+        updateMessage("", "Connected!\n\nLoading\nGame");
+        beginMqtt();
+        return;
+      }
+      break;
     case InternalMqttState::kConnected:
       if (!client.connected()) {
         Serial.println("MQTT No longer in connected state.  Restarting board");
@@ -174,6 +189,7 @@ void Network::beginMqtt() {
   int retries = 0;
   Serial.print("Connecting to AWS IOT");
 
+
   // Connect several times over.  Consider moving this out to an update loop
   while (!client.connect(deviceName.c_str()) && retries < AWS_MAX_RECONNECT_TRIES) {
     Serial.print(".");
@@ -207,7 +223,7 @@ void Network::beginMqtt() {
 }
 
 // MQTT Message recieved.
-void Network::messageReceived(String &topic, String &payload) {
+void Network::messageReceived(const String &topic, const String &payload) {
   Serial.println("Received Message: ");
   Serial.println(payload);
 
@@ -242,7 +258,7 @@ void Network::messageReceived(String &topic, String &payload) {
     r.fromRemote = true;
     JsonArray historyArray = doc["state"]["desired"]["history"].as<JsonArray>();
     r.history.clear();
-    for(auto  v: historyArray) {
+    for (auto  v : historyArray) {
       Move m;
       m.src = v["src"].as<String>();
       m.dst = v["dst"].as<String>();
@@ -251,14 +267,14 @@ void Network::messageReceived(String &topic, String &payload) {
 
     // Is this local or remote board?
     bool isLocal = topic.indexOf(deviceName) != -1;
-    
+
     // Update our game engine with the new state, forcing update if we're the same
     // board.
     engine->updateRecieved(r, isLocal);
 
     // Only subscribe to new opponent if we're not looking at old opponent
     // status
-    if(!isLocal)
+    if (!isLocal)
       return;
 
     // Check our opponent.
@@ -443,16 +459,16 @@ void Network::updateBoard() {
   doc["state"]["desired"]["isWhite"] = engine->gameState.isWhite;
   doc["state"]["desired"]["remotePlayer"] = engine->gameState.remotePlayer;
   JsonArray history = doc["state"]["desired"].createNestedArray("history");
-  for(auto &h : engine->gameState.history) {
+  for (auto &h : engine->gameState.history) {
     auto o = history.createNestedObject();
     o["src"] = h.src;
     o["dst"] = h.dst;
   }
-    
+
   serializeJson(doc, jsonBuffer, MESSAGE_LENGTH);
   String prefix = String("$aws/things/") + deviceName + "/shadow";
   Serial.print("Publishing game state: ");
-  Serial.println(jsonBuffer);  
+  Serial.println(jsonBuffer);
   client.publish(prefix + "/update", jsonBuffer);
 }
 
