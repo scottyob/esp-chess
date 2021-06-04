@@ -120,6 +120,11 @@ void loop() {
     }
   }
 
+  // Reset the board after 10 minutes of not being connected
+  if (wifiState != WifiState::kConnected && millis() > 1000 * 60 * 10) {
+    ESP.restart();
+  }
+
   // Sleep the display if no activity for an extended period of time
   // (10 minutes)
   if (millis() - table.getLastActivity() > 60 * 1000 * 10) {
