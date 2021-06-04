@@ -131,9 +131,10 @@ void loop() {
   // Update the main table components
   table.update();
   network.update();
+  engine.loop();
 
   if (table.requiresUpdate && !table.mirrorLocations) {
-    engine.didUpdate();
+    engine.didUpdate(false);
     table.requiresUpdate = false;
   }
 

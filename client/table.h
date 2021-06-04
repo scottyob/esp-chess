@@ -121,7 +121,7 @@ class Table {
     void error();
     // Update the table state
     void update();
-    void render(const int doc[GRID_SIZE][GRID_SIZE], int brightness);
+    void render(const int doc[GRID_SIZE][GRID_SIZE], int brightness, const bool& sleeping);
     unsigned long getLastActivity() {
       return lastActivity;
     }

@@ -27,7 +27,11 @@ std::vector<thc::Square> Chess::findDeltas(const thc::ChessRules &c) {
   return ret;
 }
 
-void Chess::didUpdate() {
+void Chess::didUpdate(const bool &sleeping) {
+  if(!sleeping) {
+    sleepAt = millis() + MINUTES_30;
+  }
+  
   Serial.println("Debugging, game state");
   Serial.println(cr.ToDebugStr().c_str());
 
@@ -151,7 +155,7 @@ void Chess::didUpdate() {
       colors[static_cast<int>(coord)] = BoardColor::RED;
     }
   }
-  table->render((const int(*)[8])&colors, 255);
+  table->render((const int(*)[8])&colors, 255, sleeping);
 
   // Update the
   if (messageCallback) {
@@ -164,6 +168,14 @@ void Chess::didUpdate() {
     messageCallback("", stateSmall);
   }
 
+}
+
+void Chess::loop() {
+  // General game loop.  Takes care of sleeping the board after no activity.
+  if(sleepAt > 0 && millis() > sleepAt) {
+    sleepAt = 0;
+    didUpdate(true); //Re-render the board in sleep state
+  }
 }
 
 /*
@@ -205,5 +217,5 @@ void Chess::updateRecieved(const ChessState &remote, const bool &forceReplace) {
   previousChessGame.Forsyth(gameState.previousFen.c_str());
 
   // Update the game.
-  didUpdate();
+  didUpdate(false);
 }

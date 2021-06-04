@@ -9,6 +9,7 @@
 #include <string>
 
 #define CHESSBOARD_SIZE 8
+#define MINUTES_30 (1000 * 60 * 30)
 
 /*
    Chess is the engine which drives the interaction between the table
@@ -61,19 +62,21 @@ class Chess {
     thc::Square holding = thc::Square::SQUARE_INVALID;
     void (*messageCallback)(const String &qr, const String &message);
     thc::ChessRules startState;
+    unsigned long sleepAt;
   public:
     bool needsPublishing;
     Chess(Table* table) {
       this->table = table;
       needsPublishing = false;
       messageCallback = NULL;
+      sleepAt = millis() + MINUTES_30;
     }
     ChessState gameState = {};
     thc::ChessRules cr;
     thc::ChessRules previousChessGame;
     void update(std::vector<std::string> history);
     void didChange();
-    void didUpdate();
+    void didUpdate(const bool& sleeping);
     std::vector<thc::Square> findDeltas() {
       return findDeltas(cr);
     }
@@ -82,6 +85,7 @@ class Chess {
     void onMessage(void(* callback)(const String &qr, const String &message)) {
       this->messageCallback = callback;
     }
+    void loop();
 };
 
 #endif

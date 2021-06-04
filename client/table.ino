@@ -236,18 +236,19 @@ void led_test(Adafruit_NeoPixel & p, const int& ledCount) {
   colorWipe(p, p.Color(255, 255, 255)     , 60); // White
 }
 
-void Table::render(const int doc[GRID_SIZE][GRID_SIZE], int brightness) {
+void Table::render(const int doc[GRID_SIZE][GRID_SIZE], int brightness, const bool &sleeping) {
   //static DynamicJsonDocument doc(JSONBOARD_SIZE_T);
   //deserializeJson(doc, json);
   for (int y = 0; y < GRID_SIZE; y++) {
     for (int x = 0; x < GRID_SIZE; x++) {
       uint8_t gridState = doc[y][x];
       auto color = BoardColor(gridState).color();
-      if (!color)
-        color = Adafruit_NeoPixel::Color(
+      if (!color) {
+        color = sleeping? 0 : Adafruit_NeoPixel::Color(
                   IDLE_BRIGHTNESS[y][x],
                   IDLE_BRIGHTNESS[y][x],
-                  IDLE_BRIGHTNESS[y][x]);
+                  IDLE_BRIGHTNESS[y][x]);        
+      }
       pixels.setPixelColor(board[y][x].ledNumber, color);
     }
   }
