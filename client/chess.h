@@ -34,7 +34,7 @@
 /*
    A move in a history of the game
 */
-struct Move {
+struct ChessMove {
   String src;
   String dst;
 };
@@ -48,7 +48,7 @@ struct ChessState {
   String previousFen;
   bool isWhite;
   String remotePlayer;
-  std::vector<Move> history;
+  std::vector<ChessMove> history;
   bool fromRemote;
 };
 

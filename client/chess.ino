@@ -128,7 +128,7 @@ void Chess::didUpdate(const bool &sleeping) {
           gameState.halfMoveCount++;
           gameState.previousFen = gameState.fen;
           gameState.fen = String(cr.ForsythPublish().c_str());
-          Move m;
+          ChessMove m;
           m.src = String(thc::get_file(move.src)) + String(thc::get_rank(move.src));
           m.dst = String(thc::get_file(move.dst)) + String(thc::get_rank(move.dst));
           gameState.history.push_back(m);

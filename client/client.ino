@@ -11,14 +11,6 @@
    This sketch is to power the ESP32 powered chessboard.
    Useful Links:
      Pinout:  https://www.studiopieters.nl/esp32-pinout/
-
-   Libraries Used:
-     Adafruit_SSD1306
-     Adafruit_NeoPixel
-     Qrcode
-     EspFlash
-     MQTT Library https://github.com/256dpi/arduino-mqtt - NOTE:  Using head for now as git submodule
-     ArduinoJson (benoit Blanchon)
 */
 
 #define VERSION   "1.1"

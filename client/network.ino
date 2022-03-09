@@ -259,7 +259,7 @@ void Network::messageReceived(const String &topic, const String &payload) {
     JsonArray historyArray = doc["state"]["desired"]["history"].as<JsonArray>();
     r.history.clear();
     for (auto  v : historyArray) {
-      Move m;
+      ChessMove m;
       m.src = v["src"].as<String>();
       m.dst = v["dst"].as<String>();
       r.history.push_back(m);
