@@ -27,7 +27,7 @@
 #define AWS_MAX_RECONNECT_TRIES 50
 
 // How big of buffer space to create for sending JSON MQTT messages/responses
-#define MESSAGE_LENGTH 3048
+#define MESSAGE_LENGTH 3500
 
 // how often to heartbeat in stats
 #define REPORT_SECS 30

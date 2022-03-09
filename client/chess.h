@@ -22,22 +22,9 @@
        "previousFen": "",
        "isWhite": 0,
        "remotePlayer": "",
-       "history": [
-         {
-           "src": "a2",
-           "dst": "a3"
-         }
-       ]
+       "history": "a2 b4"
    }
 */
-
-/*
-   A move in a history of the game
-*/
-struct ChessMove {
-  String src;
-  String dst;
-};
 
 /*
    The state of the game
@@ -48,7 +35,7 @@ struct ChessState {
   String previousFen;
   bool isWhite;
   String remotePlayer;
-  std::vector<ChessMove> history;
+  String history;
   bool fromRemote;
 };
 
@@ -74,7 +61,6 @@ class Chess {
     ChessState gameState = {};
     thc::ChessRules cr;
     thc::ChessRules previousChessGame;
-    void update(std::vector<std::string> history);
     void didChange();
     void didUpdate(const bool& sleeping);
     std::vector<thc::Square> findDeltas() {

@@ -1,16 +1,5 @@
 #include "chess.h"
 
-// Updates the internal chess library, then will figure out the state.
-void Chess::update(std::vector<std::string> history) {
-  cr.Init(); //Clear the board
-  thc::Move mv;
-  // Play each move to get up to the latest state.
-  for (auto & m : history) {
-    mv.NaturalIn(&cr, m.c_str());
-    cr.PlayMove(mv);
-  }
-}
-
 // Finds the squares that are different to the board.
 std::vector<thc::Square> Chess::findDeltas(const thc::ChessRules &c) {
   std::vector<thc::Square> ret;
@@ -28,10 +17,10 @@ std::vector<thc::Square> Chess::findDeltas(const thc::ChessRules &c) {
 }
 
 void Chess::didUpdate(const bool &sleeping) {
-  if(!sleeping) {
+  if (!sleeping) {
     sleepAt = millis() + MINUTES_30;
   }
-  
+
   Serial.println("Debugging, game state");
   Serial.println(cr.ToDebugStr().c_str());
 
@@ -78,7 +67,7 @@ void Chess::didUpdate(const bool &sleeping) {
       gameState.fen = "";
       gameState.previousFen = "";
       gameState.isWhite = !gameState.isWhite;
-      gameState.history.clear();
+      gameState.history = "";
       needsPublishing = true;
       return;
     }
@@ -120,6 +109,9 @@ void Chess::didUpdate(const bool &sleeping) {
       for (auto &move : possibleMoves) {
         if (move.src == holding && move.dst == target) {
           // This is a valid move.  Make it.
+          // Add the Portable Game Notation format move to our move string.
+          gameState.history += String(" ") + String(move.NaturalOut(&cr).c_str());
+
           cr.PlayMove(move);
           holding = thc::Square::SQUARE_INVALID;
           deltas = findDeltas();
@@ -128,10 +120,6 @@ void Chess::didUpdate(const bool &sleeping) {
           gameState.halfMoveCount++;
           gameState.previousFen = gameState.fen;
           gameState.fen = String(cr.ForsythPublish().c_str());
-          ChessMove m;
-          m.src = String(thc::get_file(move.src)) + String(thc::get_rank(move.src));
-          m.dst = String(thc::get_file(move.dst)) + String(thc::get_rank(move.dst));
-          gameState.history.push_back(m);
           needsPublishing = true;
         }
       }
@@ -140,13 +128,23 @@ void Chess::didUpdate(const bool &sleeping) {
 
   // If it's our turn, and the deltas match that of the previous
   // board state, then show the last move src, dst.
-  if (gameState.history.size() > 0 && findDeltas(previousChessGame).size() == 0) {
-    auto lastMove = gameState.history.back();
-    auto src = thc::make_square(lastMove.src[0], lastMove.src[1]);
-    auto dst = thc::make_square(lastMove.dst[0], lastMove.dst[1]);
-    colors[static_cast<int>(src)] = BoardColor::GREEN;
-    colors[static_cast<int>(dst)] = BoardColor::LIGHTGREEN;
-    renderDeltaColors = false;
+  if (findDeltas(previousChessGame).size() == 0) {
+    // Load a list of all the possible moves from the previous game state.
+    // Find out which move was responsible to get it to the current state.
+    // Highlight the src + dst colors on the board.
+    std::vector<thc::Move> previousPossibleMoves;
+    previousChessGame.GenLegalMoveList(previousPossibleMoves);
+
+    for (auto &move : previousPossibleMoves) {
+      // Create a new board with this move made
+      thc::ChessRules possibleState = previousChessGame;
+      possibleState.PlayMove(move);
+      if (possibleState == cr) {
+        colors[static_cast<int>(move.src)] = BoardColor::GREEN;
+        colors[static_cast<int>(move.dst)] = BoardColor::LIGHTGREEN;
+        renderDeltaColors = false;
+      }
+    }
   }
 
   if (renderDeltaColors) {
@@ -172,7 +170,7 @@ void Chess::didUpdate(const bool &sleeping) {
 
 void Chess::loop() {
   // General game loop.  Takes care of sleeping the board after no activity.
-  if(sleepAt > 0 && millis() > sleepAt) {
+  if (sleepAt > 0 && millis() > sleepAt) {
     sleepAt = 0;
     didUpdate(true); //Re-render the board in sleep state
   }
@@ -204,13 +202,13 @@ void Chess::updateRecieved(const ChessState &remote, const bool &forceReplace) {
 
   //If there's blank items, then replace the board properly
   String starting_fen = String("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-  if(gameState.fen == "") {
+  if (gameState.fen == "") {
     gameState.fen = starting_fen;
   }
-  if(gameState.previousFen == "") {
+  if (gameState.previousFen == "") {
     gameState.previousFen = starting_fen;
   }
-  
+
 
   // Update our local chess instante to the new fen
   auto success = cr.Forsyth(gameState.fen.c_str());
