@@ -209,6 +209,7 @@ void Network::beginMqtt() {
   // And we can subscribe to topics and send messages.
   Serial.println("Connected!");
   mqttState = InternalMqttState::kConnected;
+  this->state = WifiState::kConnected;
 
   // Subscribe to interesting topics, handle them
   String prefix = String("$aws/things/") + deviceName + "/shadow";
@@ -256,15 +257,9 @@ void Network::messageReceived(const String &topic, const String &payload) {
     r.isWhite = doc["state"]["desired"]["isWhite"];
     r.remotePlayer = doc["state"]["desired"]["remotePlayer"].as<String>();
     r.fromRemote = true;
-    JsonArray historyArray = doc["state"]["desired"]["history"].as<JsonArray>();
+    r.history = doc["state"]["desired"]["history"].as<String>();
     r.history.clear();
-    for (auto  v : historyArray) {
-      Move m;
-      m.src = v["src"].as<String>();
-      m.dst = v["dst"].as<String>();
-      r.history.push_back(m);
-    }
-
+    
     // Is this local or remote board?
     bool isLocal = topic.indexOf(deviceName) != -1;
 
@@ -458,12 +453,7 @@ void Network::updateBoard() {
   doc["state"]["desired"]["previousFen"] = engine->gameState.previousFen;
   doc["state"]["desired"]["isWhite"] = engine->gameState.isWhite;
   doc["state"]["desired"]["remotePlayer"] = engine->gameState.remotePlayer;
-  JsonArray history = doc["state"]["desired"].createNestedArray("history");
-  for (auto &h : engine->gameState.history) {
-    auto o = history.createNestedObject();
-    o["src"] = h.src;
-    o["dst"] = h.dst;
-  }
+  doc["state"]["desired"]["history"] = engine->gameState.history;
 
   serializeJson(doc, jsonBuffer, MESSAGE_LENGTH);
   String prefix = String("$aws/things/") + deviceName + "/shadow";
