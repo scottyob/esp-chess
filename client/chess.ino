@@ -120,6 +120,7 @@ void Chess::didUpdate(const bool &sleeping) {
           gameState.halfMoveCount++;
           gameState.previousFen = gameState.fen;
           gameState.fen = String(cr.ForsythPublish().c_str());
+
           needsPublishing = true;
         }
       }
