@@ -25,8 +25,6 @@ Libraries Used
 - Adafruit NeoPixel by Adafruit https://github.com/adafruit/Adafruit_NeoPixel (used 1.10.4)
 - MCP2301 by Bertrand Lemasle https://github.com/blemasle/arduino-mcp23017 (used 2.0)
 - ArduinoJson by Benoit Blanchon https://arduinojson.org/?utm_source=meta&utm_medium=library.properties (used 6.19.3)
-- ESP_WifiManager by Khoi Hoang https://github.com/khoih-prog/ESP_WiFiManager (used 1.10.1)
-- MQTT Client by Andreas Motzek https://bitbucket.org/amotzek/arduino/src/fab21e1e7785fe9473d83107048d4431c8fd25a9/src/main/cpp/MQTTClient/?at=master (used 1.0.2)
 - ESPFlash by Dale Giancono https://github.com/DaleGia/ESPFlash (used ???)
 - ESP WifiManager by Khoi Hoang https://github.com/khoih-prog/ESP_WiFiManager (used 1.10.1)
 - MQTT by Joel Gaehwiler https://github.com/256dpi/arduino-mqtt (used 2.5.0)
