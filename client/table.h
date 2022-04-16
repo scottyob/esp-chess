@@ -63,7 +63,7 @@ class BoardColor
         case LIGHTGREEN:
           return Adafruit_NeoPixel::Color(25,   25,   0);
         case GOLD:
-          return Adafruit_NeoPixel::Color(249,   166,   2);
+          return Adafruit_NeoPixel::Color(124,   83,   1);
         case WHITISH:
           return Adafruit_NeoPixel::Color(200,   200,   200);
         case GRAY:

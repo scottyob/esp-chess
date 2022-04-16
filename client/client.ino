@@ -13,7 +13,7 @@
      Pinout:  https://www.studiopieters.nl/esp32-pinout/
 */
 
-#define VERSION   "1.2.1"
+#define VERSION   "1.3"
 #define PROD_DOMAIN "chess.scottyob.com"
 #define LED_PIN   15  // Pin number LED strip is on.
 
@@ -129,10 +129,5 @@ void loop() {
   table.update();
   network.update();
   engine.loop();
-
-  if (table.requiresUpdate && !table.mirrorLocations) {
-    engine.didUpdate(false);
-    table.requiresUpdate = false;
-  }
 
 }

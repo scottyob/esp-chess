@@ -17,9 +17,11 @@
    It can process and provide updates in JSON format as follows (with comments)
    {
        // Increases with each move, allows us to compare remote game state with our own
-       "halfMoveCount": 0,
+       "sequenceNumber": 0,
        "fen": "",
        "previousFen": "",
+       "lastGameFen": "",
+       "lastGamePreviousFen": "",
        "isWhite": 0,
        "remotePlayer": "",
        "history": "a2 b4"
@@ -30,13 +32,14 @@
    The state of the game
 */
 struct ChessState {
-  long halfMoveCount;
+  long sequenceNumber;
   String fen;
   String previousFen;
   bool isWhite;
   String remotePlayer;
   String history;
-  bool fromRemote;
+  String lastGameFen;
+  String lastGamePreviousFen;
 };
 
 /*
@@ -50,9 +53,17 @@ class Chess {
     void (*messageCallback)(const String &qr, const String &message);
     thc::ChessRules startState;
     unsigned long sleepAt;
+     // Highlights the move that was made, returns if a move was made or not
+    bool highlightMoveMade(int colors[], thc::ChessRules &gameState, thc::ChessRules &currentState);
+    void playMove(thc::Move &move);  //Play a move
+
+    // Variables for when we last drew the board
+    long lastDrawnSequenceNumber = -1;
+    unsigned long lastActivityDrawn;
   public:
     bool needsPublishing;
     Chess(Table* table) {
+      gameState.sequenceNumber = -1;
       this->table = table;
       needsPublishing = false;
       messageCallback = NULL;
@@ -60,14 +71,16 @@ class Chess {
     }
     ChessState gameState = {};
     thc::ChessRules cr;
-    thc::ChessRules previousChessGame;
+    thc::ChessRules previousMoveChessGame;
+    thc::ChessRules previousGameLastState;
+    thc::ChessRules previousGamePreviousMoveState;
     void didChange();
-    void didUpdate(const bool& sleeping);
+    void redrawBoard(const bool& sleeping);  //something happened, and the board colors needs to be re-drawn.
     std::vector<thc::Square> findDeltas() {
       return findDeltas(cr);
     }
     std::vector<thc::Square> findDeltas(const thc::ChessRules &c);
-    void updateRecieved(const ChessState &remote, const bool &forceReplace);
+    void updateRecieved(const ChessState &newState, const bool &remotePlayer);
     void onMessage(void(* callback)(const String &qr, const String &message)) {
       this->messageCallback = callback;
     }
