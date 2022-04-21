@@ -26,6 +26,11 @@ void Chess::redrawBoard(const bool &sleeping)
     sleepAt = millis() + MINUTES_30;
   }
 
+  // Don't redraw the board if we've not yet download our game state.
+  if(gameState.sequenceNumber == -1) {
+    return;
+  }
+
   Serial.println("Debugging, game state");
   dumpChessState(gameState);
   Serial.println(cr.ToDebugStr().c_str());

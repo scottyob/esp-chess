@@ -13,7 +13,7 @@
      Pinout:  https://www.studiopieters.nl/esp32-pinout/
 */
 
-#define VERSION   "1.3"
+#define VERSION   "1.3.1"
 #define PROD_DOMAIN "chess.scottyob.com"
 #define LED_PIN   15  // Pin number LED strip is on.
 
